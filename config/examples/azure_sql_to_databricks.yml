@@ -1,0 +1,53 @@
+# Example: Azure SQL to Databricks Sync
+
+# Full Refresh Example
+- pipeline_id: azure_sql_categories
+  enabled: true
+  description: "Sync reference data from Azure SQL"
+  source:
+    connection: azure_sql_prod
+    schema: dbo
+    table: product_categories
+  target:
+    connection: databricks_bronze_prod
+    table: product_categories
+  sync_config:
+    mode: full
+    write_mode: overwrite
+    partitions: 1
+
+# Incremental Load Example
+- pipeline_id: azure_sql_transactions
+  enabled: true
+  description: "Incremental sync of transactions"
+  source:
+    connection: azure_sql_prod
+    schema: dbo
+    table: transactions
+  target:
+    connection: databricks_bronze_prod
+    table: transactions
+  sync_config:
+    mode: incremental
+    watermark_columns: [TransactionDate]
+    write_mode: append
+    partitions: 4
+    fetch_size: 10000
+
+# Merge/Upsert Example
+- pipeline_id: azure_sql_customers_upsert
+  enabled: true
+  description: "Upsert customer data - update existing, insert new"
+  source:
+    connection: azure_sql_prod
+    schema: dbo
+    table: customers
+  target:
+    connection: databricks_bronze_prod
+    table: customers
+  sync_config:
+    mode: incremental
+    watermark_columns: [ModifiedDate]
+    write_mode: merge
+    merge_keys: [customer_id]
+    partitions: 4

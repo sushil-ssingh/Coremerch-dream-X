@@ -1,0 +1,103 @@
+# Database Connection Registry
+# Define all your database connections here
+# Passwords are stored in Azure Key Vault and retrieved via secret scopes
+
+connections:
+  # ============================================
+  # EXAMPLES ORACLE DATABASES TEMPLATES 
+  # ============================================
+  
+  # Oracle Development
+  oracle_dev:
+    type: oracle
+    driver: oracle.jdbc.driver.OracleDriver
+    host: your-oracle-dev-host.com
+    port: 1521
+    service_name: ORCL_DEV
+    username: your_username
+    secret_scope: your-keyvault-scope
+    secret_key: oracle-dev-password
+    maven_coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
+    
+  # Oracle Production
+  oracle_prod:
+    type: oracle
+    driver: oracle.jdbc.driver.OracleDriver
+    host: your-oracle-prod-host.com
+    port: 1521
+    service_name: ORCL_PROD
+    username: your_username
+    secret_scope: your-keyvault-scope
+    secret_key: oracle-prod-password
+    maven_coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
+
+  # ============================================================
+  #  Setup your connection here for your pipeline
+  # ============================================================  
+  # Oracle LALCL - AAM Schema
+  oracle_lalcl:
+    type: oracle
+    driver: oracle.jdbc.driver.OracleDriver
+    host: ORA-CS-D-4797.DCSG.COM
+    port: 1521
+    service_name: LALCL
+    username: aam
+    secret_scope: kv-dsg-cormerch-dbx
+    secret_key: oracle-aal-password
+    maven_coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
+    
+  # ============================================
+  # AZURE SQL DATABASES
+  # ============================================
+  
+  # Azure SQL Development
+  azure_sql_dev:
+    type: azure_sql
+    driver: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    host: your-server-dev.database.windows.net
+    port: 1433
+    database: your_database_dev
+    username: sqladmin
+    secret_scope: your-keyvault-scope
+    secret_key: azure-sql-dev-password
+    maven_coordinates: com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre11
+    
+  # Azure SQL Production
+  azure_sql_prod:
+    type: azure_sql
+    driver: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    host: your-server-prod.database.windows.net
+    port: 1433
+    database: your_database_prod
+    username: sqladmin
+    secret_scope: your-keyvault-scope
+    secret_key: azure-sql-prod-password
+    maven_coordinates: com.microsoft.sqlserver:mssql-jdbc:12.2.0.jre11
+    
+  # ============================================
+  # DATABRICKS (as source or target)
+  # ============================================
+  
+  # Databricks Bronze Layer - Development
+  databricks_bronze_dev:
+    type: databricks
+    catalog: dev_ent_bronze_db
+    schema: cormerch
+    
+  # Databricks Bronze Layer - Production
+  databricks_bronze_prod:
+    type: databricks
+    catalog: prod_ent_bronze_db
+    schema: cormerch
+    
+  # Databricks Silver Layer - Development
+  databricks_silver_dev:
+    type: databricks
+    catalog: dev_ent_silver_db
+    schema: cormerch
+    
+  # Databricks Silver Layer - Production
+  databricks_silver_prod:
+    type: databricks
+    catalog: prod_ent_silver_db
+    schema: cormerch

@@ -1,0 +1,114 @@
+# Pipeline Configuration
+# Define your data sync pipelines here
+# Each pipeline specifies source, target, and sync configuration
+
+pipelines:
+  # ============================================
+  # EXAMPLE PIPELINE
+  # ============================================
+  
+  - pipeline_id: example_sync
+    enabled: false  # Set to true when ready to use
+    description: "Example pipeline - Oracle to Databricks incremental sync"
+    source:
+      connection: oracle_dev
+      schema: sales
+      table: orders
+    target:
+      connection: databricks_bronze_dev
+      table: orders
+    sync_config:
+      mode: incremental  # Options: full, incremental
+      watermark_columns: [last_modified_date]  # For incremental sync
+      write_mode: append  # Options: append, overwrite, merge
+      partitions: 4
+      fetch_size: 10000
+  
+  # ============================================
+  # ADD YOUR PIPELINES BELOW
+  # ============================================
+  
+  # Oracle LALCL - DSG_INTRADAY_DISTRO_HEADER Sync
+  - pipeline_id: lalcl_dsg_intraday_distro_header
+    enabled: true
+    description: "Sync DSG_INTRADAY_DISTRO_HEADER from Oracle LALCL to Databricks Bronze"
+    source:
+      connection: oracle_lalcl
+      schema: AAM
+      table: DSG_INTRADAY_DISTRO_HEADER
+    target:
+      connection: databricks_bronze_dev
+      table: DSG_INTRADAY_DISTRO_HEADER
+    sync_config:
+      mode: incremental
+      watermark_columns: [DATE_CREATED]
+      write_mode: append
+      partitions: 4
+      fetch_size: 10000
+  
+  # Oracle LALCL - DSG_INTRADAY_DISTRO_DETAIL Sync
+  - pipeline_id: lalcl_dsg_intraday_distro_detail
+    enabled: true
+    description: "Sync DSG_INTRADAY_DISTRO_DETAIL from Oracle LALCL to Databricks Bronze"
+    source:
+      connection: oracle_lalcl
+      schema: AAM
+      table: DSG_INTRADAY_DISTRO_DETAIL
+    target:
+      connection: databricks_bronze_dev
+      table: DSG_INTRADAY_DISTRO_DETAIL
+    sync_config:
+      mode: incremental
+      watermark_columns: [DATE_CREATED]
+      write_mode: append
+      partitions: 4
+      fetch_size: 10000
+  
+  # Example: Full refresh pipeline
+  # - pipeline_id: my_full_refresh
+  #   enabled: true
+  #   description: "Daily full refresh of reference data"
+  #   source:
+  #     connection: oracle_prod
+  #     schema: reference
+  #     table: products
+  #   target:
+  #     connection: databricks_bronze_prod
+  #     table: products
+  #   sync_config:
+  #     mode: full
+  #     write_mode: overwrite
+  #     partitions: 2
+  
+  # Example: Incremental pipeline
+  # - pipeline_id: my_incremental_sync
+  #   enabled: true
+  #   description: "Hourly incremental sync of transactions"
+  #   source:
+  #     connection: azure_sql_prod
+  #     schema: dbo
+  #     table: transactions
+  #   target:
+  #     connection: databricks_bronze_prod
+  #     table: transactions
+  #   sync_config:
+  #     mode: incremental
+  #     watermark_columns: [transaction_date]
+  #     write_mode: append
+  #     partitions: 8
+  
+  # Example: Reverse sync (Databricks to Oracle)
+  # - pipeline_id: export_to_oracle
+  #   enabled: true
+  #   description: "Export processed data back to Oracle"
+  #   source:
+  #     connection: databricks_silver_prod
+  #     table: aggregated_results
+  #   target:
+  #     connection: oracle_prod
+  #     schema: reporting
+  #     table: databricks_export
+  #   sync_config:
+  #     mode: full
+  #     write_mode: overwrite
+  #     partitions: 2

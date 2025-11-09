@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=bundle_config_schema.json
+bundle:
+  name: coremerch-dream-x-universal-sync
+
+# Permissions - Update with your group names
+permissions:
+  - group_name: g_az_sf_${var.v_team_name}_admin
+    level: CAN_MANAGE
+  - group_name: g_az_sf_${var.v_team_name}_engineers
+    level: CAN_MANAGE
+
+# Include configuration files
+include:
+  - dab_config/variables.yml
+  - dab_config/workflows.yml
+
+targets:
+  # Local development target
+  local:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-7098146655993014.14.azuredatabricks.net/  # Update with your workspace
+    variables:
+      v_env: dev
+    permissions:
+      - service_principal_name: 1de7e71c-3e09-4ce0-ac86-755bc5365019  # Update with your SP
+        level: CAN_MANAGE
+
+  # Development environment
+  development:
+    workspace:
+      host: https://adb-7098146655993014.14.azuredatabricks.net/  # Update with your workspace
+      profile: sushil.singh@dcsg.com
+    variables:
+      v_env: dev
+    permissions:
+      - service_principal_name: 1de7e71c-3e09-4ce0-ac86-755bc5365019  # Update with your SP
+        level: CAN_MANAGE
+
+  # Production environment
+  production:
+    workspace:
+      host: https://adb-3759157064858225.5.azuredatabricks.net/  # Update with your workspace
+    variables:
+      v_env: prod
+    permissions:
+      - service_principal_name: 5f36afb4-8fbe-486b-bf50-203f5e2008ff  # Update with your SP
+        level: CAN_MANAGE

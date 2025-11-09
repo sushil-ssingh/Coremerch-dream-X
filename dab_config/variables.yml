@@ -1,0 +1,23 @@
+variables:
+  # Cluster configuration
+  v_job_cluster_policy_id:
+    lookup:
+      cluster_policy: DKS Job Compute
+  
+  v_node_type_id:
+    default: Standard_E4s_v5
+  
+  v_spark_version:
+    default: 15.4.x-scala2.12
+  
+  # Environment
+  v_env:
+    default: dev
+  
+  # Team configuration
+  v_team_name:
+    default: cormerch
+  
+  # Workspace path
+  v_workspace_path:
+    default: ${workspace.file_path}

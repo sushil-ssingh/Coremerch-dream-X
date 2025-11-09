@@ -1,0 +1,34 @@
+# Example: Databricks to Oracle (Reverse Sync / Export)
+
+# Export Aggregated Data
+- pipeline_id: export_sales_summary
+  enabled: true
+  description: "Export daily sales summary from Databricks to Oracle"
+  source:
+    connection: databricks_silver_prod
+    table: daily_sales_summary
+  target:
+    connection: oracle_prod
+    schema: reporting
+    table: databricks_sales_export
+  sync_config:
+    mode: full
+    write_mode: overwrite
+    partitions: 2
+
+# Export Processed Events
+- pipeline_id: export_processed_events
+  enabled: true
+  description: "Export processed events to Oracle for downstream systems"
+  source:
+    connection: databricks_gold_prod
+    table: processed_events
+  target:
+    connection: oracle_prod
+    schema: analytics
+    table: event_data
+  sync_config:
+    mode: incremental
+    watermark_columns: [processed_timestamp]
+    write_mode: append
+    partitions: 4

@@ -1,0 +1,60 @@
+# Example: Oracle to Databricks Sync
+
+# Full Refresh Example
+- pipeline_id: oracle_products_full
+  enabled: true
+  description: "Daily full refresh of product catalog from Oracle"
+  source:
+    connection: oracle_prod
+    schema: inventory
+    table: products
+  target:
+    connection: databricks_bronze_prod
+    table: products
+  sync_config:
+    mode: full
+    write_mode: overwrite
+    partitions: 2
+    fetch_size: 10000
+
+# Incremental Load Example
+- pipeline_id: oracle_orders_incremental
+  enabled: true
+  description: "Hourly incremental sync of orders"
+  source:
+    connection: oracle_prod
+    schema: sales
+    table: orders
+  target:
+    connection: databricks_bronze_prod
+    table: orders
+  sync_config:
+    mode: incremental
+    watermark_columns: [order_date]
+    write_mode: append
+    partitions: 8
+    fetch_size: 10000
+
+# Custom Query Example
+- pipeline_id: oracle_active_customers
+  enabled: true
+  description: "Sync only active customers with custom filtering"
+  source:
+    connection: oracle_prod
+    query: |
+      SELECT 
+        customer_id,
+        customer_name,
+        email,
+        status,
+        created_date
+      FROM crm.customers
+      WHERE status = 'ACTIVE'
+      AND region = 'US'
+  target:
+    connection: databricks_bronze_prod
+    table: active_us_customers
+  sync_config:
+    mode: full
+    write_mode: overwrite
+    partitions: 2
