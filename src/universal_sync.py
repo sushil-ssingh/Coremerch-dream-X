@@ -150,7 +150,11 @@ def run_pipeline(pipeline_id: str, env: str, workspace_path: str):
                 source_schema or '', source_table
             )
         
-        log_message("INFO", f"Current watermark: {watermark_value}")
+        log_message("INFO", f"Current watermark: {watermark_value} (type: {type(watermark_value).__name__})")
+        
+        # Show the actual filter being used
+        filter_clause = source_adapter.get_incremental_filter(watermark_columns, watermark_value)
+        log_message("INFO", f"Incremental filter: {filter_clause}")
         
         # Build incremental filter
         if not source_query:
@@ -177,7 +181,12 @@ def run_pipeline(pipeline_id: str, env: str, workspace_path: str):
     
     if record_count == 0:
         log_message("WARNING", "No data to sync")
-        return
+        return {
+            'status': 'SUCCESS',
+            'records_synced': 0,
+            'message': 'No new records found',
+            'pipeline_id': pipeline_id
+        }
     
     # For incremental loads, track new watermark
     new_watermark = None
@@ -225,8 +234,19 @@ def run_pipeline(pipeline_id: str, env: str, workspace_path: str):
 # Execute pipeline
 try:
     result = run_pipeline(pipeline_id, env, workspace_path)
-    # Exit with success message (don't include dict which looks like error)
-    dbutils.notebook.exit("SUCCESS")
+    
+    # Format success message with details
+    if result:
+        records = result.get('records_synced', 0)
+        duration = result.get('duration_seconds', 0)
+        if records == 0:
+            message = f"SUCCESS: No new records to sync"
+        else:
+            message = f"SUCCESS: Synced {records:,} records in {duration:.1f}s"
+        dbutils.notebook.exit(message)
+    else:
+        dbutils.notebook.exit("SUCCESS: No data to sync")
+        
 except Exception as e:
     log_message("ERROR", f"Pipeline failed: {str(e)}")
     import traceback

@@ -42,7 +42,8 @@ pipelines:
     sync_config:
       mode: incremental
       watermark_columns: [DATE_CREATED]
-      write_mode: append
+      write_mode: merge
+      merge_keys: [WL_KEY]
       partitions: 4
       fetch_size: 10000
   
@@ -60,7 +61,8 @@ pipelines:
     sync_config:
       mode: incremental
       watermark_columns: [DATE_CREATED]
-      write_mode: append
+      write_mode: merge
+      merge_keys: [WL_KEY, ITEM_NBR, COLOR_NBR, SIZE_NBR, DIM_NBR, LOCATION_ID]
       partitions: 4
       fetch_size: 10000
   

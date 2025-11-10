@@ -65,13 +65,31 @@ class OracleAdapter(DatabaseAdapter):
     
     def get_incremental_filter(self, watermark_columns: List[str], watermark_value: Any) -> str:
         """Oracle-specific date comparison"""
+        from datetime import datetime as dt
+        import re
+        
         conditions = []
         for col in watermark_columns:
-            if isinstance(watermark_value, datetime):
+            # Handle different watermark value types
+            if isinstance(watermark_value, dt):
+                # Python datetime object
                 date_str = watermark_value.strftime('%Y-%m-%d %H:%M:%S')
-                condition = f"{col} > TO_DATE('{date_str}', 'YYYY-MM-DD HH24:MI:SS')"
+                condition = f"{col} > TO_TIMESTAMP('{date_str}', 'YYYY-MM-DD HH24:MI:SS')"
+            elif isinstance(watermark_value, str):
+                # String - could be date or timestamp
+                # Try to detect if it has time component
+                if re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', watermark_value):
+                    # Has time component
+                    condition = f"{col} > TO_TIMESTAMP('{watermark_value}', 'YYYY-MM-DD HH24:MI:SS')"
+                elif re.match(r'\d{4}-\d{2}-\d{2}', watermark_value):
+                    # Date only - add time
+                    condition = f"{col} > TO_TIMESTAMP('{watermark_value} 00:00:00', 'YYYY-MM-DD HH24:MI:SS')"
+                else:
+                    # Unknown format, try as-is
+                    condition = f"{col} > TO_TIMESTAMP('{watermark_value}', 'YYYY-MM-DD HH24:MI:SS')"
             else:
-                condition = f"{col} > '{watermark_value}'"
+                # Numeric watermark
+                condition = f"{col} > {watermark_value}"
             conditions.append(condition)
         return ' OR '.join(conditions)
     
@@ -99,11 +117,14 @@ class OracleAdapter(DatabaseAdapter):
             .option("password", password) \
             .option("driver", self.get_driver()) \
             .option("oracle.jdbc.timezoneAsRegion", "false") \
-            .option("oracle.jdbc.mapDateToTimestamp", "false") \
             .option("numPartitions", partitions) \
             .option("fetchSize", fetch_size) \
-            .option("preferTimestampNTZ", "false") \
             .load()
+        
+        # Cast DATE columns to TIMESTAMP to preserve time component
+        for field in df.schema.fields:
+            if str(field.dataType) == 'DateType':
+                df = df.withColumn(field.name, F.col(field.name).cast("timestamp"))
         
         return df
     

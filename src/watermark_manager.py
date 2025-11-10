@@ -84,7 +84,13 @@ class WatermarkManager:
         if self.schema_version == 'v1':
             watermark_type = row.wmType
             if watermark_type == "timestamp":
-                return row.timestampWm
+                wm_value = row.timestampWm
+                # Ensure it's a datetime object
+                if wm_value and not isinstance(wm_value, datetime):
+                    from pyspark.sql.types import TimestampType
+                    # Convert to datetime if it's not already
+                    return datetime.fromisoformat(str(wm_value))
+                return wm_value
             elif watermark_type == "bigint":
                 return row.bigIntWm
             elif watermark_type == "int":
@@ -94,7 +100,11 @@ class WatermarkManager:
         else:
             watermark_type = row.watermark_type
             if watermark_type == "timestamp":
-                return row.watermark_value_timestamp
+                wm_value = row.watermark_value_timestamp
+                # Ensure it's a datetime object
+                if wm_value and not isinstance(wm_value, datetime):
+                    return datetime.fromisoformat(str(wm_value))
+                return wm_value
             elif watermark_type == "bigint":
                 return row.watermark_value_bigint
             elif watermark_type == "int":
@@ -108,7 +118,7 @@ class WatermarkManager:
                            source_schema: str, source_table: str, 
                            watermark_column: str, watermark_type: str = "timestamp"):
         """Initialize watermark with default value"""
-        default_timestamp = datetime(2000, 1, 1, 0, 0, 0)
+        default_timestamp = datetime(1900, 1, 1, 0, 0, 0)
         
         if self.schema_version == 'v1':
             # Old schema
@@ -117,8 +127,8 @@ class WatermarkManager:
                     databaseName, tableName, wmType, timestampWm,
                     bigIntWm, intWm, stringWm
                 ) VALUES (
-                    '{source_schema}', '{source_table}', '{watermark_type}',
-                    CAST('{default_timestamp}' AS TIMESTAMP),
+                    '{source_schema}', '{source_table}', 'timestamp',
+                    CAST('1900-01-01 00:00:00' AS TIMESTAMP),
                     NULL, NULL, NULL
                 )
             """)
@@ -179,9 +189,14 @@ class WatermarkManager:
             if existing_count > 0:
                 # Update existing record
                 if watermark_type == "timestamp":
+                    # Format timestamp properly
+                    if isinstance(new_value, datetime):
+                        ts_str = new_value.strftime('%Y-%m-%d %H:%M:%S')
+                    else:
+                        ts_str = str(new_value)
                     self.spark.sql(f"""
                         UPDATE {self.watermark_table}
-                        SET timestampWm = CAST('{new_value}' AS TIMESTAMP), wmType = '{watermark_type}'
+                        SET timestampWm = CAST('{ts_str}' AS TIMESTAMP), wmType = 'timestamp'
                         WHERE databaseName = '{source_schema}' AND tableName = '{source_table}'
                     """)
                 elif watermark_type == "bigint":
@@ -205,9 +220,14 @@ class WatermarkManager:
             else:
                 # Insert new record
                 if watermark_type == "timestamp":
+                    # Format timestamp properly
+                    if isinstance(new_value, datetime):
+                        ts_str = new_value.strftime('%Y-%m-%d %H:%M:%S')
+                    else:
+                        ts_str = str(new_value)
                     self.spark.sql(f"""
                         INSERT INTO {self.watermark_table} (databaseName, tableName, wmType, timestampWm)
-                        VALUES ('{source_schema}', '{source_table}', '{watermark_type}', CAST('{new_value}' AS TIMESTAMP))
+                        VALUES ('{source_schema}', '{source_table}', 'timestamp', CAST('{ts_str}' AS TIMESTAMP))
                     """)
                 elif watermark_type == "bigint":
                     self.spark.sql(f"""
@@ -262,4 +282,10 @@ class WatermarkManager:
             max_col = '_max_watermark'
         
         max_value = df.agg({max_col: "max"}).collect()[0][0]
+        
+        # Ensure timestamp is properly formatted
+        if max_value and hasattr(max_value, 'strftime'):
+            # It's a datetime/timestamp - return as-is
+            return max_value
+        
         return max_value
