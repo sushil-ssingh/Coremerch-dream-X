@@ -66,6 +66,44 @@ pipelines:
       partitions: 4
       fetch_size: 10000
   
+  # Oracle LALCL - DSG_DISTRO_FACT_HEADER Sync
+  - pipeline_id: lalcl_dsg_distro_fact_header
+    enabled: true
+    description: "Sync DSG_DISTRO_FACT_HEADER from Oracle LALCL to Databricks Bronze"
+    source:
+      connection: oracle_lalcl
+      schema: AAM
+      table: DSG_DISTRO_FACT_HEADER
+    target:
+      connection: databricks_bronze_dev
+      table: DSG_DISTRO_FACT_HEADER
+    sync_config:
+      mode: incremental
+      watermark_columns: [DATE_CREATED]
+      write_mode: merge
+      merge_keys: [WL_KEY]
+      partitions: 4
+      fetch_size: 10000
+  
+  # Oracle LALCL - DSG_DISTRO_FACT_DETAIL Sync
+  - pipeline_id: lalcl_dsg_distro_fact_detail
+    enabled: true
+    description: "Sync DSG_DISTRO_FACT_DETAIL from Oracle LALCL to Databricks Bronze"
+    source:
+      connection: oracle_lalcl
+      schema: AAM
+      table: DSG_DISTRO_FACT_DETAIL
+    target:
+      connection: databricks_bronze_dev
+      table: DSG_DISTRO_FACT_DETAIL
+    sync_config:
+      mode: incremental
+      watermark_columns: [DATE_CREATED]
+      write_mode: merge
+      merge_keys: [WL_KEY, ITEM_NBR, COLOR_NBR, SIZE_NBR, DIM_NBR, LOCATION_ID]
+      partitions: 4
+      fetch_size: 10000
+  
   # Example: Full refresh pipeline
   # - pipeline_id: my_full_refresh
   #   enabled: true

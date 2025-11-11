@@ -37,6 +37,36 @@ resources:
                 coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
           job_cluster_key: job_cluster
         
+        # Oracle LALCL - DSG_DISTRO_FACT_HEADER
+        - task_key: lalcl_dsg_distro_fact_header
+          notebook_task:
+            notebook_path: ../src/universal_sync.py
+            base_parameters:
+              pipeline_id: lalcl_dsg_distro_fact_header
+              env: ${var.v_env}
+              workspace_path: ${var.v_workspace_path}
+            source: WORKSPACE
+          libraries:
+            - maven:
+                coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
+          job_cluster_key: job_cluster
+        
+        # Oracle LALCL - DSG_DISTRO_FACT_DETAIL (runs after header completes)
+        - task_key: lalcl_dsg_distro_fact_detail
+          depends_on:
+            - task_key: lalcl_dsg_distro_fact_header
+          notebook_task:
+            notebook_path: ../src/universal_sync.py
+            base_parameters:
+              pipeline_id: lalcl_dsg_distro_fact_detail
+              env: ${var.v_env}
+              workspace_path: ${var.v_workspace_path}
+            source: WORKSPACE
+          libraries:
+            - maven:
+                coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
+          job_cluster_key: job_cluster
+        
         # Add more tasks here by copying the pattern above
         # Just change task_key and pipeline_id to match your pipelines
         
