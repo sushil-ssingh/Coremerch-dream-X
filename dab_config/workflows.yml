@@ -37,12 +37,12 @@ resources:
                 coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
           job_cluster_key: job_cluster
         
-        # Oracle LALCL - DSG_DISTRO_FACT_HEADER
-        - task_key: lalcl_dsg_distro_fact_header
+        # ONE-TIME: Load FACT HEADER from Oracle (disable after first run)
+        - task_key: lalcl_dsg_distro_fact_header_initial
           notebook_task:
             notebook_path: ../src/universal_sync.py
             base_parameters:
-              pipeline_id: lalcl_dsg_distro_fact_header
+              pipeline_id: lalcl_dsg_distro_fact_header_initial
               env: ${var.v_env}
               workspace_path: ${var.v_workspace_path}
             source: WORKSPACE
@@ -51,20 +51,46 @@ resources:
                 coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
           job_cluster_key: job_cluster
         
-        # Oracle LALCL - DSG_DISTRO_FACT_DETAIL (runs after header completes)
-        - task_key: lalcl_dsg_distro_fact_detail
+        # ONE-TIME: Load FACT DETAIL from Oracle (disable after first run)
+        - task_key: lalcl_dsg_distro_fact_detail_initial
           depends_on:
-            - task_key: lalcl_dsg_distro_fact_header
+            - task_key: lalcl_dsg_distro_fact_header_initial
           notebook_task:
             notebook_path: ../src/universal_sync.py
             base_parameters:
-              pipeline_id: lalcl_dsg_distro_fact_detail
+              pipeline_id: lalcl_dsg_distro_fact_detail_initial
               env: ${var.v_env}
               workspace_path: ${var.v_workspace_path}
             source: WORKSPACE
           libraries:
             - maven:
                 coordinates: com.oracle.ojdbc:ojdbc8:19.3.0.0
+          job_cluster_key: job_cluster
+        
+        # DAILY: Merge INTRADAY to FACT HEADER (runs after intraday detail completes)
+        - task_key: merge_intraday_to_fact_header
+          depends_on:
+            - task_key: lalcl_dsg_intraday_distro_detail
+          notebook_task:
+            notebook_path: ../src/universal_sync.py
+            base_parameters:
+              pipeline_id: merge_intraday_to_fact_header
+              env: ${var.v_env}
+              workspace_path: ${var.v_workspace_path}
+            source: WORKSPACE
+          job_cluster_key: job_cluster
+        
+        # DAILY: Merge INTRADAY to FACT DETAIL (runs after fact header merge completes)
+        - task_key: merge_intraday_to_fact_detail
+          depends_on:
+            - task_key: merge_intraday_to_fact_header
+          notebook_task:
+            notebook_path: ../src/universal_sync.py
+            base_parameters:
+              pipeline_id: merge_intraday_to_fact_detail
+              env: ${var.v_env}
+              workspace_path: ${var.v_workspace_path}
+            source: WORKSPACE
           job_cluster_key: job_cluster
         
         # Add more tasks here by copying the pattern above

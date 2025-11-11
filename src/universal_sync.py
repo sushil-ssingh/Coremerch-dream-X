@@ -64,7 +64,12 @@ def run_pipeline(pipeline_id: str, env: str, workspace_path: str):
     
     if not pipeline_config.get('enabled', True):
         log_message("WARNING", f"Pipeline is disabled: {pipeline_id}")
-        return
+        return {
+            'status': 'SKIPPED',
+            'records_synced': 0,
+            'message': 'Pipeline is disabled',
+            'pipeline_id': pipeline_id
+        }
     
     # Validate pipeline
     is_valid, message = config_loader.validate_pipeline(pipeline_config)
@@ -237,9 +242,13 @@ try:
     
     # Format success message with details
     if result:
+        status = result.get('status', 'SUCCESS')
         records = result.get('records_synced', 0)
         duration = result.get('duration_seconds', 0)
-        if records == 0:
+        
+        if status == 'SKIPPED':
+            message = f"SKIPPED: Pipeline is disabled"
+        elif records == 0:
             message = f"SUCCESS: No new records to sync"
         else:
             message = f"SUCCESS: Synced {records:,} records in {duration:.1f}s"

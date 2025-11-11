@@ -66,10 +66,10 @@ pipelines:
       partitions: 4
       fetch_size: 10000
   
-  # Oracle LALCL - DSG_DISTRO_FACT_HEADER Sync
-  - pipeline_id: lalcl_dsg_distro_fact_header
-    enabled: true
-    description: "Sync DSG_DISTRO_FACT_HEADER from Oracle LALCL to Databricks Bronze"
+  # Oracle LALCL - DSG_DISTRO_FACT_HEADER (ONE-TIME historical load - disable after first run)
+  - pipeline_id: lalcl_dsg_distro_fact_header_initial
+    enabled: false
+    description: "One-time load of DSG_DISTRO_FACT_HEADER from Oracle LALCL"
     source:
       connection: oracle_lalcl
       schema: AAM
@@ -78,27 +78,57 @@ pipelines:
       connection: databricks_bronze_dev
       table: DSG_DISTRO_FACT_HEADER
     sync_config:
-      mode: incremental
-      watermark_columns: [DATE_CREATED]
+      mode: full
+      write_mode: overwrite
+      partitions: 4
+      fetch_size: 10000
+  
+  # Oracle LALCL - DSG_DISTRO_FACT_DETAIL (ONE-TIME historical load - disable after first run)
+  - pipeline_id: lalcl_dsg_distro_fact_detail_initial
+    enabled: false
+    description: "One-time load of DSG_DISTRO_FACT_DETAIL from Oracle LALCL"
+    source:
+      connection: oracle_lalcl
+      schema: AAM
+      table: DSG_DISTRO_FACT_DETAIL
+    target:
+      connection: databricks_bronze_dev
+      table: DSG_DISTRO_FACT_DETAIL
+    sync_config:
+      mode: full
+      write_mode: overwrite
+      partitions: 4
+      fetch_size: 10000
+  
+  # Databricks - Merge INTRADAY to FACT HEADER (runs daily)
+  - pipeline_id: merge_intraday_to_fact_header
+    enabled: true
+    description: "Merge DSG_INTRADAY_DISTRO_HEADER into DSG_DISTRO_FACT_HEADER"
+    source:
+      connection: databricks_bronze_dev
+      table: DSG_INTRADAY_DISTRO_HEADER
+    target:
+      connection: databricks_bronze_dev
+      table: DSG_DISTRO_FACT_HEADER
+    sync_config:
+      mode: full
       write_mode: merge
       merge_keys: [WL_KEY]
       partitions: 4
       fetch_size: 10000
   
-  # Oracle LALCL - DSG_DISTRO_FACT_DETAIL Sync
-  - pipeline_id: lalcl_dsg_distro_fact_detail
+  # Databricks - Merge INTRADAY to FACT DETAIL (runs daily)
+  - pipeline_id: merge_intraday_to_fact_detail
     enabled: true
-    description: "Sync DSG_DISTRO_FACT_DETAIL from Oracle LALCL to Databricks Bronze"
+    description: "Merge DSG_INTRADAY_DISTRO_DETAIL into DSG_DISTRO_FACT_DETAIL"
     source:
-      connection: oracle_lalcl
-      schema: AAM
-      table: DSG_DISTRO_FACT_DETAIL
+      connection: databricks_bronze_dev
+      table: DSG_INTRADAY_DISTRO_DETAIL
     target:
       connection: databricks_bronze_dev
       table: DSG_DISTRO_FACT_DETAIL
     sync_config:
-      mode: incremental
-      watermark_columns: [DATE_CREATED]
+      mode: full
       write_mode: merge
       merge_keys: [WL_KEY, ITEM_NBR, COLOR_NBR, SIZE_NBR, DIM_NBR, LOCATION_ID]
       partitions: 4
